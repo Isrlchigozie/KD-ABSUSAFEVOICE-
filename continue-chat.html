@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Continue Anonymous Chat</title>
+  <link rel="stylesheet" href="styles.css" />
+
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/11.7.3/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/11.7.3/firebase-firestore-compat.js"></script>
+
+  <!-- Firebase Config -->
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyBZfHqUWLMu-gZmofr0x10IufQVIPaw7rk",
+      authDomain: "kd-safevoice.firebaseapp.com",
+      projectId: "kd-safevoice",
+      storageBucket: "kd-safevoice.firebasestorage.app",
+      messagingSenderId: "689841699827",
+      appId: "1:689841699827:web:2fb9f75d93b186d2997086"
+    };
+  </script>
+
+  <style>
+    /* Inline error styling (can be moved to styles.css) */
+    .input-error {
+      color: #e74c3c;
+      font-size: 14px;
+      margin-top: 8px;
+      display: none;
+    }
+
+    .input-wrapper.error input {
+      border: 1.5px solid #e74c3c;
+      background-color: #fff5f5;
+    }
+
+    .input-error.show {
+      display: block;
+    }
+  </style>
+</head>
+
+<body class="chat-body">
+  <section class="cont-chat">
+    <img src="church-logo.png" alt="Church Logo" class="church-logo">
+    <h2 class="chat-title">Continue Your Anonymous Chat</h2>
+    <p class="chat-subtitle">Enter your anonymous Chat ID to continue where you left off.</p>
+
+    <form id="continueChatForm" onsubmit="redirectToChat(event)">
+      <div class="input-wrapper" id="inputWrapper">
+        <input type="text" id="chatIdInput" placeholder="Enter your Chat ID (e.g., Yuest_7XQJ)" required />
+        <p id="chatError" class="input-error"></p>
+      </div>
+      <button class="hero-btn" type="submit">Continue Chat</button>
+    </form>
+  </section>
+
+  <script>
+    // Initialize Firebase
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    const chatIdInput = document.getElementById("chatIdInput");
+    const chatError = document.getElementById("chatError");
+    const inputWrapper = document.getElementById("inputWrapper");
+
+    function showError(message) {
+      chatError.textContent = message;
+      chatError.classList.add("show");
+      inputWrapper.classList.add("error");
+    }
+
+    function clearError() {
+      chatError.textContent = "";
+      chatError.classList.remove("show");
+      inputWrapper.classList.remove("error");
+    }
+
+    chatIdInput.addEventListener("input", clearError);
+    
+    function showToast(message) {
+  const toast = document.getElementById("toast");
+  toast.textContent = message;
+  toast.classList.remove("hidden");
+  setTimeout(() => {
+    toast.classList.add("hidden");
+  }, 4000);
+}
+
+
+    async function redirectToChat(event) {
+      event.preventDefault();
+      const chatId = chatIdInput.value.trim();
+
+      if (!chatId) return;
+
+      try {
+        const docRef = db.collection("chats").doc(chatId);
+        const doc = await docRef.get();
+
+        if (!doc.exists) {
+          showError("Chat ID not found. Please double-check and try again.");
+          return;
+        }
+
+        const messagesRef = docRef.collection("messages");
+        const messagesSnapshot = await messagesRef.limit(1).get();
+
+        if (messagesSnapshot.empty) {
+          showError("This Chat ID hasn't been used yet. Please start a new chat instead.");
+          return;
+        }
+
+        window.location.href = 'chat-window.html?chatId=' + encodeURIComponent(chatId);
+      } catch (error) {
+  console.error("Error checking chat ID:", error);
+  showError("Something went wrong. Please try again later.");
+  showToast("Unexpected error occurred. Please check your connection.");
+}
+    }
+  </script>
+  <div id="toast" class="toast hidden"></div>
+</body>
+</html>

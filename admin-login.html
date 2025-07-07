@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Admin Login</title>
+  <link rel="stylesheet" href="styles.css" />
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/11.7.3/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/11.7.3/firebase-auth-compat.js"></script>
+
+  <script>
+    // Firebase config
+    const firebaseConfig = {
+      apiKey: "AIzaSyBZfHqUWLMu-gZmofr0x10IufQVIPaw7rk",
+      authDomain: "kd-safevoice.firebaseapp.com",
+      projectId: "kd-safevoice",
+      storageBucket: "kd-safevoice.appspot.com",
+      messagingSenderId: "689841699827",
+      appId: "1:689841699827:web:2fb9f75d93b186d2997086"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+  </script>
+
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      margin: 0;
+      padding: 0;
+    }
+
+    .admin-dashboard {
+      max-width: 500px;
+      margin: 40px auto;
+      padding: 20px;
+      background-color: #fff;
+      border-radius: 16px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+      text-align: center;
+    }
+
+    .church-logo {
+      width: 80px;
+      height: 80px;
+      margin-bottom: 15px;
+    }
+
+    .chat-title {
+      font-size: 24px;
+      font-weight: bold;
+      margin-bottom: 5px;
+      color: #333;
+    }
+    
+    .chat-subtitle {
+      font-size: 14px;
+      color: #555;
+      margin-bottom: 20px;
+    }
+
+    .input-wrapper {
+      margin-bottom: 10px;
+    }
+
+    .input-wrapper input {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      font-size: 14px;
+    }
+
+    .toggle-eye {
+      position: absolute;
+      right: 10px;
+      cursor: pointer;
+      color: #888;
+    }
+
+    button {
+      padding: 10px 20px;
+      background-color: #1E90FF;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: bold;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+
+<body class="chat-body">
+  <div class="admin-dashboard">
+    <img src="church-logo.png" alt="Church Logo" class="church-logo" />
+    <h2 class="chat-title">Admin Login</h2>
+    <p class="chat-subtitle">Please enter your credentials to login</p>
+    <p id="errorMessage" class="error-message" style="
+  display: none;
+  background-color: #ffe5e5;
+  color: #c0392b;
+  padding: 10px;
+  border-radius: 8px;
+  margin-bottom: 15px;
+  font-size: 14px;
+"></p>
+
+    <form onsubmit="login(); return false">
+    <div class="input-wrapper">
+      <input type="email" id="adminEmail" placeholder="Enter email" required />
+    </div>
+    <div class="input-wrapper" style="position:relative;">
+      <input type="password" id="adminPassword" placeholder="Enter password" required />
+      <span class="material-icons toggle-eye" onclick="togglePassword()" id="eyeIcon">visibility</span>
+    </div>
+    <button type="submit">Login</button>
+  </div>
+  </form>
+
+  <script>
+    function togglePassword() {
+      const input = document.getElementById("adminPassword");
+      const icon = document.getElementById("eyeIcon");
+      if (input.type === "password") {
+        input.type = "text";
+        icon.textContent = "visibility_off";
+      } else {
+        input.type = "password";
+        icon.textContent = "visibility";
+      }
+    }
+
+    function login() {
+      const email = document.getElementById("adminEmail").value.trim();
+      const password = document.getElementById("adminPassword").value.trim();
+
+      if (!email || !password) {
+        alert("Please enter both email and password.");
+        return;
+      }
+
+      auth.signInWithEmailAndPassword(email, password)
+        .then(() => {
+          window.location.href = "admin-dashboard.html";
+        })
+        .catch((error) => {
+  let message;
+  switch (error.code) {
+    case 'auth/user-not-found':
+      message = "No account found with that email.";
+      break;
+    case 'auth/wrong-password':
+      message = "Incorrect password. Please try again.";
+      break;
+    case 'auth/network-request-failed':
+      message = "Network error. Please check your connection.";
+      break;
+    default:
+      message = "Login failed. Please try again.";
+  }
+
+  const errorDisplay = document.getElementById("errorMessage");
+  errorDisplay.textContent = message;
+  errorDisplay.style.display = "block";
+});
+
+document.getElementById("adminEmail").addEventListener("input", () => {
+  document.getElementById("errorMessage").style.display = "none";
+});
+document.getElementById("adminPassword").addEventListener("input", () => {
+  document.getElementById("errorMessage").style.display = "none";
+});
+    }
+  </script>
+</body>
+</html>

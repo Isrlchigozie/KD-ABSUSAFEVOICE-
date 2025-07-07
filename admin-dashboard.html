@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Admin Dashboard</title>
+  <link rel="stylesheet" href="styles.css" />
+
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/11.7.3/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/11.7.3/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/11.7.3/firebase-firestore-compat.js"></script>
+
+  <style>
+    body {  
+      font-family: 'Segoe UI', sans-serif;  
+      background-color: #f4f6f8;  
+      margin: 0;  
+      padding: 0;  
+    }  
+  
+    .admin-dashboard {  
+      max-width: 600px;  
+      margin: 40px auto;  
+      padding: 20px;  
+      background-color: #fff;  
+      border-radius: 16px;  
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);  
+      text-align: center;  
+    }  
+  
+    .chat-title {  
+      font-size: 24px;  
+      font-weight: bold;  
+      margin-bottom: 20px;  
+      color: #333;  
+    }  
+  
+    .chat-list {  
+      margin-top: 20px;  
+      text-align: left;  
+      padding-left: 0;  
+      list-style: none;  
+      min-height: 150px;  
+    }  
+  
+    .chat-item {  
+      display: flex;  
+      align-items: center;  
+      padding: 12px;  
+      background-color: #f9f9f9;  
+      border-radius: 12px;  
+      margin-bottom: 10px;  
+      cursor: pointer;  
+      transition: background-color 0.3s ease;  
+      position: relative;  
+    }  
+  
+    .chat-item:hover {  
+      background-color: #e6f0ff;  
+    }  
+  
+    .chat-icon-wrapper {  
+      position: relative;  
+      width: 36px;  
+      height: 36px;  
+      margin-right: 12px;  
+      overflow: visible;   
+    }  
+  
+    .chat-icon {  
+      color: #fff;  
+      border-radius: 50%;  
+      width: 36px;  
+      height: 36px;  
+      display: flex;  
+      align-items: center;  
+      justify-content: center;  
+      font-weight: bold;  
+      font-size: 18px;  
+      user-select: none;  
+    }  
+    .unread-badge {  
+      position: absolute;  
+      top: -6px;  
+      left: -6px;  
+      background-color: #e74c3c;  
+      color: white;  
+      border-radius: 50%;  
+      font-size: 12px;  
+      padding: 3px 7px;  
+      font-weight: bold;  
+      border: 2px solid white;  
+      min-width: 18px;  
+      text-align: center;  
+      user-select: none;  
+      z-index: 10;  
+    }  
+  
+    .chat-info strong {  
+      font-size: 15px;  
+      display: block;  
+      word-break: break-word;  
+    }  
+  
+    .chat-info small {  
+      font-size: 12px;  
+      color: #666;  
+    }  
+  
+    button {  
+      font-weight: bold;  
+      border: none;  
+      border-radius: 8px;  
+      cursor: pointer;  
+      transition: background-color 0.3s ease;  
+    }  
+  
+    #refreshBtn {  
+      background-color: #1e90ff;  
+      color: white;  
+      margin-bottom: 20px;  
+      display: inline-flex;  
+      align-items: center;  
+      gap: 8px;  
+      margin-right: 10px;  
+      padding: 6px 12px;  
+      font-size: 13px;  
+      border-radius: 6px;  
+      min-width: auto;  
+    }  
+  
+    #refreshBtn:hover {  
+      background-color: #187bcd;  
+    }  
+      
+    #logoutBtn {  
+      background: transparent;  
+      color: #e74c3c;   
+      border: 2px solid #e74c3c;  
+      padding: 8px 18px;  
+      font-weight: 600;  
+      font-size: 16px;  
+      border-radius: 6px;  
+      cursor: pointer;  
+      transition: all 0.3s ease;  
+      text-transform: uppercase;  
+      letter-spacing: 1px;  
+    }  
+  
+    #logoutBtn:hover {  
+      background: #e74c3c;  
+      color: white;  
+      box-shadow: 0 4px 8px rgba(231, 76, 60, 0.4);  
+    }  
+  
+    .loading-message {  
+      color: #888;  
+      font-style: italic;  
+      margin-top: 20px;  
+      font-size: 14px;  
+    }  
+  
+    @media (max-width: 600px) {  
+      .admin-dashboard {  
+        margin: 20px 10px;  
+        padding: 16px;  
+      }  
+  
+      .chat-title {  
+        font-size: 20px;  
+      }  
+  
+      .chat-item {  
+        padding: 10px;  
+      }  
+  
+      .chat-icon {  
+        width: 44px;  
+        height: 44px;  
+        font-size: 20px;  
+      }  
+  
+      .chat-info strong {  
+        font-size: 14px;  
+      }  
+  
+      .chat-info small {  
+        font-size: 11px;  
+      }  
+  
+      #logoutBtn {  
+        font-size: 14px;  
+        padding: 12px;  
+      }  
+  </style>
+
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyBZfHqUWLMu-gZmofr0x10IufQVIPaw7rk",
+      authDomain: "kd-safevoice.firebaseapp.com",
+      projectId: "kd-safevoice",
+      storageBucket: "kd-safevoice.appspot.com",
+      messagingSenderId: "689841699827",
+      appId: "1:689841699827:web:2fb9f75d93b186d2997086"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+
+    const ADMIN_EMAIL = "islchigozie@gmail.com";
+
+    auth.onAuthStateChanged(user => {
+      if (!user) {
+        window.location.href = "admin-login.html";
+      } else if (user.email !== ADMIN_EMAIL) {
+        alert("Access denied: Not an authorized admin.");
+        auth.signOut().then(() => {
+          window.location.href = "admin-login.html";
+        });
+      } else {
+        loadChats();
+      }
+    });
+
+    function renderChats(chats) {
+      const list = document.getElementById("chatList");
+      list.innerHTML = "";
+      chats.forEach(({ id, unreadCount }) => {
+        const li = document.createElement("li");
+        li.innerHTML = `
+          <div class="chat-item" role="button" tabindex="0" onclick="openChat('${id}')" onkeypress="if(event.key==='Enter'){openChat('${id}')}" >
+            <div class="chat-icon-wrapper">
+              <div class="chat-icon">👤</div>
+              ${unreadCount > 0 ? `<span class="unread-badge">${unreadCount}</span>` : ''}
+            </div>
+            <div class="chat-info">
+              <strong>${id}</strong>
+              <small>Click to open chat</small>
+            </div>
+          </div>
+        `;
+        list.appendChild(li);
+      });
+    }
+
+    async function loadChats(force = false) {
+      const list = document.getElementById("chatList");
+      const cached = sessionStorage.getItem("cachedChats");
+      if (cached && !force) {
+        renderChats(JSON.parse(cached));
+      } else {
+        list.innerHTML = `<div class="loading-message">Loading chats...</div>`;
+      }
+
+      try {
+        const snapshot = await db.collection("chats").orderBy("lastUpdated", "desc").get();
+        if (snapshot.empty) {
+          list.innerHTML = `<div style="text-align:center; color:#888; margin-top:40px; font-size:16px;">No chats available at the moment.</div>`;
+          sessionStorage.removeItem("cachedChats");
+          return;
+        }
+
+        const chatPromises = snapshot.docs.map(async doc => {
+          const id = doc.id;
+          const unreadSnapshot = await db.collection("chats").doc(id).collection("messages")
+            .where("sender", "==", "user")
+            .where("seenByPastor", "==", false)
+            .get();
+
+          return { id, unreadCount: unreadSnapshot.size };
+        });
+
+        const chats = await Promise.all(chatPromises);
+        renderChats(chats);
+        sessionStorage.setItem("cachedChats", JSON.stringify(chats));
+      } catch (error) {
+        console.error("Error loading chats:", error);
+        if (!cached) {
+          list.innerHTML = `<div style="color: red; text-align: center; margin-top: 20px;">Error loading chats. Please try again later.</div>`;
+        }
+      }
+    }
+
+    function openChat(chatId) {
+      window.location.href = `chat-window.html?chatId=${encodeURIComponent(chatId)}&admin=true`;
+    }
+ 
+
+    function logout() {
+      auth.signOut().then(() => {
+        window.location.href = "admin-login.html";
+      }).catch(error => {
+        alert("Error during logout: " + error.message);
+      });
+    }
+  </script>
+</head>
+<body>
+  <div class="admin-dashboard">
+    <h2 class="chat-title">Welcome</h2>
+    <button id="refreshBtn" onclick="loadChats(true)">Refresh</button>
+    <ul id="chatList" class="chat-list" aria-live="polite"></ul>
+    <button id="logoutBtn" onclick="logout()">Logout</button>
+  </div>
+</body>
+</html>

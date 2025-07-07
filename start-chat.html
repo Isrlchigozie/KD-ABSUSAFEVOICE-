@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Start Anonymous Chat</title>
+  <link rel="stylesheet" href="styles.css" />
+
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/11.7.3/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/11.7.3/firebase-firestore-compat.js"></script>
+
+  <style>
+    body, .chat-page {
+      position: relative;
+      z-index: 0;
+    }
+
+    .spinner {
+      border: 2px solid #f3f3f3;
+      border-top: 2px solid #CFAE5B;
+      border-radius: 50%;
+      width: 12px;
+      height: 12px;
+      animation: spin 0.6s linear infinite;
+      display: inline-block;
+      margin-right: 8px;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .error-box {
+      color: #721c24;
+      background-color: #f8d7da;
+      border: 1px solid #f5c6cb;
+      padding: 12px;
+      border-radius: 5px;
+      margin-top: 15px;
+      font-size: 0.95rem;
+    }
+
+    #retryBtn {
+      margin-top: 10px;
+    }
+    
+    .toast {
+  position: fixed;
+  bottom: 30px;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: #f0f0f0;
+  color: #2E2E2E;
+  padding: 14px 20px;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+  opacity: 0;
+  transition: opacity 0.3s ease, bottom 0.3s ease;
+  z-index: 99999;
+  pointer-events: none;
+}
+
+.toast.show {
+  opacity: 1;
+  bottom: 50px;
+}
+  </style>
+
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyBZfHqUWLMu-gZmofr0x10IufQVIPaw7rk",
+      authDomain: "kd-safevoice.firebaseapp.com",
+      projectId: "kd-safevoice",
+      storageBucket: "kd-safevoice.appspot.com",
+      messagingSenderId: "689841699827",
+      appId: "1:689841699827:web:2fb9f75d93b186d2997086"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+  </script>
+</head>
+
+<body class="chat-body">
+  <div class="chat-page">
+    <img src="church-logo.png" alt="Church Logo" class="church-logo">
+
+    <h2 class="chat-title">Start Anonymous Chat</h2>
+    <p class="chat-subtitle">Need help? You're not alone. Start by sending a message below.</p>
+
+    <div class="chat-id-box">
+      <p><strong>Your Anonymous Chat ID:</strong> 
+        <span id="chatId"><span class="spinner"></span> Generating...</span>
+      </p>
+      <div class="button-group">
+        <button class="hero-btn" id="copyBtn" disabled>Copy</button>
+        <button class="hero-btn" id="downloadBtn" disabled>Download ID</button>
+      </div>
+    </div>
+
+    <p class="warning"><b>Warning:❌</b> If you lose your chat ID, you won't be able to access your conversation again.</p>
+
+    <button id="startChatBtn" class="hero-btn" disabled>Start New Chat</button>
+    <button id="retryBtn" class="hero-btn" style="display: none;">Try Again</button>
+    <div id="errorContainer"></div>
+  </div>
+
+  <div id="toast" class="toast"></div>
+
+  <script>
+    let generatedChatId = null;
+
+    async function generateChatId() {
+      const chatIdElement = document.getElementById("chatId");
+      const errorContainer = document.getElementById("errorContainer");
+
+      chatIdElement.innerHTML = `<span class="spinner"></span> Generating...`;
+      document.getElementById("startChatBtn").disabled = true;
+      document.getElementById("copyBtn").disabled = true;
+      document.getElementById("downloadBtn").disabled = true;
+      errorContainer.innerHTML = "";
+      document.getElementById("retryBtn").style.display = "none";
+
+      try {
+        const chatRef = await db.collection("chats").add({
+          createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+          unreadCount: 0
+        });
+        generatedChatId = chatRef.id;
+        chatIdElement.textContent = generatedChatId;
+
+        document.getElementById("startChatBtn").disabled = false;
+        document.getElementById("copyBtn").disabled = false;
+        document.getElementById("downloadBtn").disabled = false;
+      } catch (error) {
+        console.error("Failed to create chat session:", error);
+        chatIdElement.textContent = "Error generating ID";
+        chatIdElement.style.color = "red";
+
+        errorContainer.innerHTML = `
+          <div class="error-box">
+            We couldn't generate a Chat ID. Please check your internet connection and try again.
+          </div>
+        `;
+        document.getElementById("retryBtn").style.display = "inline-block";
+      }
+    }
+
+    function showToast(message) {
+      const toast = document.getElementById("toast");
+      toast.textContent = message;
+      toast.classList.add("show");
+
+      setTimeout(() => {
+        toast.classList.remove("show");
+      }, 3000);
+    }
+
+    document.addEventListener("DOMContentLoaded", generateChatId);
+
+    document.getElementById("retryBtn").addEventListener("click", generateChatId);
+
+    document.getElementById("startChatBtn").addEventListener("click", () => {
+      if (generatedChatId) {
+        window.location.href = `chat-window.html?chatId=${generatedChatId}`;
+      }
+    });
+
+    document.getElementById("copyBtn").addEventListener("click", () => {
+      if (generatedChatId)
+        navigator.clipboard.writeText(generatedChatId)
+          .then(() => showToast("Chat ID copied!"));
+    });
+
+    document.getElementById("downloadBtn").addEventListener("click", () => {
+      if (generatedChatId) {
+        const blob = new Blob([generatedChatId], { type: "text/plain" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "chat-id.txt";
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+
+        showToast("Chat ID downloaded!");
+      }
+    });
+  </script>
+</body>
+</html>

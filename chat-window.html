@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Anonymous Chat</title>
+  <link rel="stylesheet" href="styles.css" />
+
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/11.7.3/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/11.7.3/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/11.7.3/firebase-auth-compat.js"></script>
+
+  <!-- Firebase Config -->
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyBZfHqUWLMu-gZmofr0x10IufQVIPaw7rk",
+      authDomain: "kd-safevoice.firebaseapp.com",
+      projectId: "kd-safevoice",
+      storageBucket: "kd-safevoice.appspot.com",
+      messagingSenderId: "689841699827",
+      appId: "1:689841699827:web:2fb9f75d93b186d2997086"
+    };
+  </script>
+</head>
+<body class="chat-bodyy">
+  <div class="chat-page" role="main">
+    <img src="church-logo.png" alt="Church Logo" class="church-logo" />
+    <h2 class="chat-title" aria-live="polite">Anonymous Chat</h2>
+    <p class="chat-subtitle">You are chatting anonymously with Pastor. Your messages are confidential.</p>
+    
+    <div class="chat-flow" id="chatFlow" aria-label="Chat messages" role="log" aria-live="polite"></div>
+
+    <div class="input-area">
+      <textarea id="messageInput" placeholder="Type your message..." aria-label="Message input"></textarea>
+      <button class="hero-btn send-btn" onclick="sendMessage()" aria-label="Send message">Send</button>
+    </div>
+
+    <div id="toast" class="toast hidden" role="alert" aria-live="assertive"></div>
+  </div>
+
+  <script>
+    // Initialize Firebase
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+    const auth = firebase.auth();
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const chatId = urlParams.get("chatId");
+    const isAdmin = urlParams.get("admin") === "true";
+
+    const chatFlow = document.getElementById("chatFlow");
+    const chatTitle = document.querySelector(".chat-title");
+    const chatSubtitle = document.querySelector(".chat-subtitle");
+    const input = document.getElementById("messageInput");
+    const sendBtn = document.querySelector(".send-btn");
+
+    // Disable inputs until validation
+    input.disabled = true;
+    sendBtn.disabled = true;
+
+    function showToast(message) {
+      const toast = document.getElementById("toast");
+      toast.textContent = message;
+      toast.classList.remove("hidden");
+      setTimeout(() => toast.classList.add("hidden"), 4000);
+    }
+
+    // === MAIN ACCESS LOGIC ===
+    if (isAdmin) {
+      // Admin needs auth
+      auth.onAuthStateChanged(user => {
+        if (user && user.email === "islchigozie@gmail.com") {
+          console.log("Pastor authenticated:", user.email);
+
+          if (!chatId) {
+            chatFlow.innerHTML = "<p style='padding: 1rem; color: #b00;'>No Chat ID provided. Please start a chat from the main page.</p>";
+          } else {
+            input.disabled = false;
+            sendBtn.disabled = false;
+            initializeChat(true);
+          }
+        } else {
+          alert("Access denied. Not authorized.");
+          window.location.href = "not-authorized.html";
+        }
+      });
+    } else {
+      // Anonymous users don't need auth
+      if (!chatId) {
+        chatFlow.innerHTML = "<p style='padding: 1rem; color: #b00;'>No Chat ID found. Please go back and start a new chat.</p>";
+      } else {
+        input.disabled = false;
+        sendBtn.disabled = false;
+        initializeChat(false);
+      }
+    }
+
+    // === FUNCTION TO LOAD CHAT ===
+    function initializeChat(userIsAdmin) {
+      if (userIsAdmin) {
+        chatTitle.textContent = `Chat with ${chatId}`;
+        chatSubtitle.textContent = "You're chatting with an anonymous user.";
+      } else {
+        chatTitle.textContent = "Anonymous Chat";
+        chatSubtitle.textContent = "You are chatting anonymously with Pastor.";
+      }
+
+      input.focus();
+
+      db.collection("chats").doc(chatId).collection("messages")
+        .orderBy("timestamp")
+        .onSnapshot(snapshot => {
+          chatFlow.innerHTML = "";
+          let unreadCount = 0;
+
+          snapshot.forEach(doc => {
+            const data = doc.data();
+            const timestamp = data.timestamp?.toDate?.();
+            if (!timestamp) return;
+
+            const msgElem = document.createElement("div");
+            msgElem.className = data.sender === "pastor" ? "message pastor" : "message user";
+
+            const textSpan = document.createElement("span");
+            textSpan.textContent = data.sender === "pastor" ? `Pastor: ${data.text}` : data.text;
+
+            const timeSpan = document.createElement("span");
+            timeSpan.className = "timestamp";
+            timeSpan.textContent = timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+            msgElem.appendChild(textSpan);
+            msgElem.appendChild(timeSpan);
+
+            // User sees ✓✓ if message was seen
+            if (!userIsAdmin && data.sender === "user" && data.seen) {
+              const seenSpan = document.createElement("span");
+              seenSpan.className = "seen-check";
+              seenSpan.textContent = " ✓✓";
+              msgElem.appendChild(seenSpan);
+            }
+
+            chatFlow.appendChild(msgElem);
+
+            if (userIsAdmin && data.sender === "user" && !data.seen) {
+              unreadCount++;
+            }
+          });
+
+          if (userIsAdmin) {
+            chatTitle.textContent = unreadCount > 0
+              ? `Chat with ${chatId} (${unreadCount} unread)`
+              : `Chat with ${chatId}`;
+
+            // Mark unread as seen
+            snapshot.docs.forEach(doc => {
+              const data = doc.data();
+              if (data.sender === "user" && !data.seen) {
+                doc.ref.update({ seen: true }).catch(console.error);
+              }
+            });
+          }
+
+          chatFlow.scrollTo({
+            top: chatFlow.scrollHeight,
+            behavior: "smooth"
+          });
+        }, (error) => {
+          console.error("Real-time listener error:", error);
+          showToast("Error loading messages. Please refresh.");
+        });
+    }
+
+    function sendMessage() {
+      const message = input.value.trim();
+      if (!message) return;
+
+      const bannedWords = ["badword1", "badword2", "anotherbadword"];
+      const containsBadWord = bannedWords.some(word =>
+        message.toLowerCase().includes(word)
+      );
+
+      if (containsBadWord) {
+        alert("Your message contains inappropriate language. Please revise it.");
+        return;
+      }
+
+      sendBtn.disabled = true;
+
+      db.collection("chats").doc(chatId).collection("messages").add({
+        text: message,
+        sender: isAdmin ? "pastor" : "user",
+        timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+        seen: false
+      })
+      .then(() => {
+        db.collection("chats").doc(chatId).set({
+          lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+        }, { merge: true });
+
+        input.value = "";
+        input.focus();
+        sendBtn.disabled = false;
+      })
+      .catch((error) => {
+        showToast("Failed to send message: " + error.message);
+        console.error("Send error:", error);
+        sendBtn.disabled = false;
+      });
+    }
+
+    input.addEventListener("keydown", function (e) {
+      if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        sendMessage();
+      }
+    });
+  </script>
+</body>
+</html>
