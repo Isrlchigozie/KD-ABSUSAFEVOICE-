@@ -8,7 +8,7 @@ https://kd-safevoice.web.app
 
 ## About the Project
 
-**KD-ABSUSafeVoice** is a two-way  web-based anonymous chat application.  
+**SafeVoice** is a two-way  web-based anonymous chat application.  
 The goal is to connect students to pastors or counselors in a **safe, private, and judgment-free** space where they can talk about emotional, academic, and spiritual challenges.
 
 The entire platform was designed with **confidentiality, simplicity, and trust** in mind.
@@ -36,7 +36,7 @@ The entire platform was designed with **confidentiality, simplicity, and trust**
 
 1. Clone the repo:
    ```bash
-   git clone https://github.com/Isrlchigozie/KD-ABSUSAFEVOICE.git
+   git clone https://github.com/Isrlchigozie/SAFEVOICE.git
 
 
 2. Set up Firebase:
@@ -65,7 +65,7 @@ This app does not collect or store user names, emails, or phone numbers. All cha
 Acknowledgments
 
 Built with ❤️ by Li.Corp
-In partnership with the Kingdom Dominion Campus Fellowship, ABSU
+For Kingdom Diplomats ABSU 
 
 
 
