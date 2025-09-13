@@ -1,4 +1,4 @@
-> A confidential support chat platform for students at ABSU.  
+> A confidential two-way anonymous websites.  
 > Built to provide a safe space for emotional and spiritual conversations with trusted counselors.
 
 
