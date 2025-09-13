@@ -8,7 +8,7 @@ https://kd-safevoice.web.app
 
 ## About the Project
 
-**KD-ABSUSafeVoice** is a web-based anonymous chat application built for **students of Abia State University (ABSU)**.  
+**KD-ABSUSafeVoice** is a two-way  web-based anonymous chat application.  
 The goal is to connect students to pastors or counselors in a **safe, private, and judgment-free** space where they can talk about emotional, academic, and spiritual challenges.
 
 The entire platform was designed with **confidentiality, simplicity, and trust** in mind.
